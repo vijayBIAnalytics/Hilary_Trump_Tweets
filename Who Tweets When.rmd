@@ -1,0 +1,88 @@
+---
+title: "Who Tweets When"
+author: "Vijay Pulijala"
+date: "October 9, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(readr)
+
+setwd("c:/Users/vpulij001c/Desktop/vj/R/TweetsData")
+options(scipen = 15)
+data <- read_csv("tweets.csv")
+
+
+data <- within(data, {
+  id              <- as.numeric(id)
+  handle          <- as.character(handle)
+  text            <- as.character(text)
+  original_author <- as.character(original_author)
+  time            <- as.character(time)})
+
+data$date <- as.Date(substr(data$time, 1, 10))
+data$time_new <- substr(data$time, 12, 19)
+data$time_hour <- substr(data$time_new, 1, 2)
+
+analysis_time <- group_by(data, handle, time_hour) %>%
+                summarise(no_tweets = n()) %>%
+ungroup()
+
+analysis_time$time_hour <- as.numeric(analysis_time$time_hour)
+
+temp_hillary <- data.frame(handle = c("HillaryClinton","HillaryClinton","HillaryClinton","HillaryClinton"), time_hour = c(6,7,8,9), no_tweets = c(0,0,0,0))
+
+analysis_time <- rbind(as.data.frame(analysis_time), temp_hillary)
+
+plot1 <- ggplot(data = analysis_time, aes(x = time_hour, y = no_tweets, fill = factor(handle))) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  scale_x_continuous(name = "", breaks = c(0, 6, 12, 18, 23), labels = c("12 a.m.","6 a.m.","12 p.m.","6 p.m.","11 p.m.")) +
+  scale_y_continuous("Number of Tweets") +
+  ggtitle("Clinton vs. Trump: Who tweets when during the day?") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom", legend.direction = "horizontal", legend.title = element_blank(), 
+        legend.key = element_blank(), legend.key.size = unit(0.4, "cm")) +
+        theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+ggsave("WhoTweetsWhen1.png", plot1, height = 6, width = 11, units = "in")
+
+analysis_date <- group_by(data, date, handle) %>%
+  summarise(no_tweets = n())
+
+plot2 <- ggplot(analysis_date, aes(x = date, y = no_tweets, color = factor(handle))) +
+  geom_line(size = 1) +
+  scale_x_date(labels = date_format("%b"), breaks = date_breaks("month")) +
+  xlab("") +
+  ylab("Number of Tweets") +
+  ggtitle("Clinton vs. Trump: Who tweeted when during the year?") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom", legend.direction = "horizontal", legend.title = element_blank(), 
+        legend.key = element_blank(), legend.key.size = unit(0.4, "cm")) +
+        theme(panel.border=element_blank()) +
+  theme(axis.ticks=element_blank())
+
+ggsave("WhoTweetsWhen2.png", plot2, height = 6, width = 11, units = "in")
+
+```
+
+#Who Tweets When!
+##The below data shows trending in tweets between Jan 5th 2016 till 28th Sept 2016
+
+  The below chart shows the number of tweets done by each during a day
+  
+```{r , echo=FALSE}
+plot1
+```
+
+  The below chart shows the number of tweets done from Jan to Sept
+  
+```{r , echo=FALSE}
+plot2
+```
+
